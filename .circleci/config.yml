@@ -9,6 +9,14 @@ commands:
                 type: string
         steps:
             - run:
+                  name: Install PIP
+                  command: |
+                      sudo apt-get install python-pip python-dev
+            - run:
+                  name: Install awscli
+                  command: |
+                      sudo pip install awscli
+            - run:
                   name: Destroy backend
                   when: on_fail
                   command: |
@@ -217,18 +225,14 @@ jobs:
             # attach workspace
             - run:
                   name: Install dependencies
-                  working_directory: ./.circleci/ansible
-
                   command: |
                       apk add --update ansible
                       ansible --version
             - run:
                   name: Configure server
-                  working_directory: ./.circleci/ansible
                   command: |
-                      pwd &&
-                      ls -la
-                      cat inventory
+                      cd .circleci/ansible
+                      cat inventory.txt
                       ansible-playbook -i inventory configure-server.yaml
             - destroy-environment
         # Here's where you will add some code to rollback on failure
