@@ -53,7 +53,6 @@ commands:
                        cd ~/project/backend
                        npm install
                        npm run migrations:revert
-                      #  Add revert code here. You can find this in the Getting Started section.
                       fi
 
 jobs:
