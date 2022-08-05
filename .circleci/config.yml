@@ -1,5 +1,8 @@
 version: 2.1
 
+orbs:
+    aws-cli: circleci/aws-cli@2.0.3
+
 commands:
     destroy-environment:
         description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
@@ -7,6 +10,9 @@ commands:
             workflow_id:
                 default: "${CIRCLE_WORKFLOW_ID:0:7}"
                 type: string
+
+        docker:
+            - image: amazon/aws-cli
         steps:
             - run:
                   name: Install PIP
@@ -226,13 +232,11 @@ jobs:
             - run:
                   name: Install dependencies
                   command: |
-                      apk add --update ansible
-                      ansible --version
+                      apk add --update --no-cache tar gzip ansible aws-cli
             - run:
                   name: Configure server
                   command: |
                       cd .circleci/ansible
-                      cat inventory.txt
                       ansible-playbook -i inventory configure-server.yaml
             - destroy-environment
         # Here's where you will add some code to rollback on failure
