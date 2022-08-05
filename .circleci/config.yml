@@ -1,49 +1,51 @@
 version: 2.1
 
-# - run:
-#                   name: Destroy backend on fail
-#                   when: on_fail
-#                   command: |
-#                       aws cloudformation delete-stack --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
-#             - run:
-#                   name: Destroy frontend on fail
-#                   when: on_fail
-#                   command: |
-#                       aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
+commands:
+    destroy-environment:
+        description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
+        parameters:
+            workflow_id:
+                default: "${CIRCLE_WORKFLOW_ID:0:7}"
+                type: string
+        steps:
+            - run:
+                  name: Destroy backend
+                  when: on_fail
+                  command: |
+                      aws cloudformation delete-stack --stack-name "udapeople-backend-<<parameters.workflow_id>>"
+            - run:
+                  name: Destroy frontend
+                  when: on_fail
+                  command: |
+                      aws cloudformation delete-stack --stack-name "udapeople-frontend-<<parameters.workflow_id>>"
 
-# commands:
-#     destroy-environment:
-#         description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
-#         steps:
-#             - run:
-#                   name: Destroy backend
-#                   when: on_fail
-#                   command: |
-#                       aws cloudformation delete-stack --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
-#             - run:
-#                   name: Destroy frontend
-#                   when: on_fail
-#                   command: |
-#                       aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
+            - run:
+                  name: Destroy s3 bucket
+                  when: on_fail
+                  command: |
+                      aws s3 rm s3://udapeople-<<parameters.workflow_id>> --recursive
 
-#   revert-migrations:
-#     description: Revert the last migration if successfully run in the current workflow.
-#     parameters:
-#       # Add parameter here
-#     steps:
-#       - run:
-#           name: Revert migrations
-#           # Add when this will run
-#           command: |
-#             # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
-#             SUCCESS = 1
-#             if(( $SUCCESS==1 ));
-#             then
-#             #  cd ~/project/backend
-#             #  npm install
-#             #  Add revert code here. You can find this in the Getting Started section.
-#               exit 1
-#             fi
+    revert-migrations:
+        description: Revert the last migration if successfully run in the current workflow.
+        parameters:
+            workflow_id:
+                default: "${CIRCLE_WORKFLOW_ID:0:7}"
+                type: string
+        # Add parameter here
+        steps:
+            - run:
+                  name: Revert migrations
+                  # Add when this will run
+                  command: |
+                      # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
+                      SUCCESS = $(curl --insecure "https://kvdb.io/AD54eAeGt77GiosL7nBac9/migration_<<parameters.workflow_id>>")
+                      if(( $SUCCESS==1 ));
+                      then
+                       cd ~/project/backend
+                       npm install
+                       npm run migrations:revert
+                      #  Add revert code here. You can find this in the Getting Started section.
+                      fi
 
 jobs:
     build-frontend:
@@ -199,24 +201,37 @@ jobs:
                       - project/.circleci/ansible/inventory.txt
         # Here's where you will add some code to rollback on failure
 
-#   configure-infrastructure:
-#     docker:
-#       # Docker image here that supports Ansible
-#     steps:
-#       # Checkout code from git
-#       # Add ssh keys with fingerprint
-#       # attach workspace
-#       - run:
-#           name: Install dependencies
-#           command: |
-#             # Your code here
-#             exit 1
-#       - run:
-#           name: Configure server
-#           command: |
-#             # Your code here
-#             exit 1
-#       # Here's where you will add some code to rollback on failure
+    configure-infrastructure:
+        docker:
+            - image: python:3.7-alpine3.11
+        # Docker image here that supports Ansible
+        steps:
+            - checkout
+            - add_ssh_keys:
+                  fingerprints:
+                      ["7a:f5:df:92:cd:6b:30:39:88:0f:21:64:1a:40:6e:a5"]
+            - attach_workspace:
+                  at: ~/
+            # Checkout code from git
+            # Add ssh keys with fingerprint
+            # attach workspace
+            - run:
+                  name: Install dependencies
+                  working_directory: ./.circleci/ansible
+
+                  command: |
+                      apk add --update ansible
+                      ansible --version
+            - run:
+                  name: Configure server
+                  working_directory: ./.circleci/ansible
+                  command: |
+                      pwd &&
+                      ls -la
+                      cat inventory
+                      ansible-playbook -i inventory configure-server.yaml
+            - destroy-environment
+        # Here's where you will add some code to rollback on failure
 
 #   run-migrations:
 #     docker:
