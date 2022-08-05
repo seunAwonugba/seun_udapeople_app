@@ -6,26 +6,40 @@ commands:
         parameters:
             workflow_id:
                 default: "${CIRCLE_WORKFLOW_ID:0:7}"
-                type: string
+                type:
+                    string
+                    # - run:
+            #       name: Destroy env
+            #       when: on_fail
+            #       command: |
+            #           aws cloudformation delete-stack --stack-name StackBackendUdaPeople-<< parameters.Workflow_ID >>
+            #           aws s3 rm s3://udapeople-<<parameters.Workflow_ID>> --recursive
+            #           aws cloudformation delete-stack --stack-name StackFrontUdaPeople-<< parameters.Workflow_ID >>
+
         steps:
             - run:
-                  name: Destroy infrastructure
+                  name: Install awscli
+                  command: |
+                      curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+                      unzip awscliv2.zip
+                      sudo ./aws/install
+
+            - run:
+                  name: Destroy backend
                   when: on_fail
                   command: |
                       aws cloudformation delete-stack --stack-name "udapeople-backend-<<parameters.workflow_id>>"
+            - run:
+                  name: Destroy frontend
+                  when: on_fail
+                  command: |
                       aws cloudformation delete-stack --stack-name "udapeople-frontend-<<parameters.workflow_id>>"
-                      aws s3 rm s3://udapeople-<<parameters.workflow_id>> --recursive
-            # - run:
-            #       name: Destroy frontend
-            #       when: on_fail
-            #       command: |
-            #           aws cloudformation delete-stack --stack-name "udapeople-frontend-<<parameters.workflow_id>>"
 
-            # - run:
-            #       name: Destroy s3 bucket
-            #       when: on_fail
-            #       command: |
-            #           aws s3 rm s3://udapeople-<<parameters.workflow_id>> --recursive
+            - run:
+                  name: Destroy s3 bucket
+                  when: on_fail
+                  command: |
+                      aws s3 rm s3://udapeople-<<parameters.workflow_id>> --recursive
 
     revert-migrations:
         description: Revert the last migration if successfully run in the current workflow.
@@ -224,8 +238,9 @@ jobs:
             - run:
                   name: Configure server
                   command: |
-                      cd .circleci/ansible
-                      ansible-playbook -i inventory configure-server.yaml
+                      cat ./.circleci/ansible/inventory.txt
+                      export ANSIBLE_HOST_KEY_CHECKING=false
+                      ansible-playbook -i ./.circleci/ansible/inventory.txt ./.circleci/ansible/configure-server.yml
             - destroy-environment
         # Here's where you will add some code to rollback on failure
 
