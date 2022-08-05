@@ -12,16 +12,6 @@ executors:
             - image: amazon/aws-cli
 
 commands:
-    install_ansible:
-        description: Install Ansible
-        steps:
-            - run:
-                  name: Install Ansible
-                  command: |
-                      sudo apt update
-                      sudo apt install software-properties-common -y
-                      sudo add-apt-repository --yes --update ppa:ansible/ansible
-                      sudo apt install ansible -y
     destroy-environment:
         description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
         parameters:
@@ -30,29 +20,23 @@ commands:
                 type: string
         steps:
             - run:
-                  name: Install PIP
-                  command: |
-                      sudo apt-get install python-pip python-dev
-            - run:
-                  name: Install awscli
-                  command: |
-                      sudo pip install awscli
-            - run:
                   name: Destroy backend
                   when: on_fail
                   command: |
                       aws cloudformation delete-stack --stack-name "udapeople-backend-<<parameters.workflow_id>>"
-            - run:
-                  name: Destroy frontend
-                  when: on_fail
-                  command: |
                       aws cloudformation delete-stack --stack-name "udapeople-frontend-<<parameters.workflow_id>>"
-
-            - run:
-                  name: Destroy s3 bucket
-                  when: on_fail
-                  command: |
                       aws s3 rm s3://udapeople-<<parameters.workflow_id>> --recursive
+            # - run:
+            #       name: Destroy frontend
+            #       when: on_fail
+            #       command: |
+            #           aws cloudformation delete-stack --stack-name "udapeople-frontend-<<parameters.workflow_id>>"
+
+            # - run:
+            #       name: Destroy s3 bucket
+            #       when: on_fail
+            #       command: |
+            #           aws s3 rm s3://udapeople-<<parameters.workflow_id>> --recursive
 
     revert-migrations:
         description: Revert the last migration if successfully run in the current workflow.
@@ -254,22 +238,30 @@ jobs:
             - destroy-environment
         # Here's where you will add some code to rollback on failure
 
-#   run-migrations:
-#     docker:
-#       # Docker image here that supports NodeJS
-#     steps:
-#       # Checkout code from git
-#       - run:
-#           name: Run migrations
-#           command: |
-#             # Your code here
-#             exit 1
-#       - run:
-#           name: Send migration results to memstash
-#           command: |
-#             # Your code here
-#             exit 1
-#      # Here's where you will add some code to rollback on failure
+    run-migrations:
+        docker:
+            - image: circleci/node:13.8.0
+
+        # Docker image here that supports NodeJS
+        steps:
+            - checkout
+            # Checkout code from git
+            - run:
+                  name: Run migrations
+                  command: |
+                      cd backend
+                      npm install
+                      npm run migrations > migrations_dump.txt
+            - run:
+                  name: Send migration results to memstash
+                  command: |
+                      if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
+                      then
+                        curl --insecure https://kvdb.io/AD54eAeGt77GiosL7nBac9/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
+                      fi
+            - destroy-environment
+            - revert-migrations
+        # Here's where you will add some code to rollback on failure
 
 #   deploy-frontend:
 #     docker:
@@ -387,8 +379,8 @@ workflows:
                           only: [main]
             - configure-infrastructure:
                   requires: [deploy-infrastructure]
-            # - run-migrations:
-            #     requires: [configure-infrastructure]
+            - run-migrations:
+                  requires: [configure-infrastructure]
             # - deploy-frontend:
             #     requires: [run-migrations]
             # - deploy-backend:
