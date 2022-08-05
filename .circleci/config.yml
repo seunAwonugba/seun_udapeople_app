@@ -1,8 +1,5 @@
 version: 2.1
 
-orbs:
-    aws-cli: circleci/aws-cli@2.0.3
-
 commands:
     destroy-environment:
         description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
@@ -10,9 +7,6 @@ commands:
             workflow_id:
                 default: "${CIRCLE_WORKFLOW_ID:0:7}"
                 type: string
-
-        docker:
-            - image: amazon/aws-cli
         steps:
             - run:
                   name: Install PIP
