@@ -282,28 +282,10 @@ jobs:
                       ["7a:f5:df:92:cd:6b:30:39:88:0f:21:64:1a:40:6e:a5"]
             - attach_workspace:
                   at: ~/
-            # Checkout code from git
             - run:
-                  name: Install aws
+                  name: Install dependencies
                   command: |
-                      sudo apt-get update && sudo apt-get install -yy less
-                      curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-                      unzip awscliv2.zip
-                      sudo ./aws/install
-            - run:
-                  name: install tar gzip
-                  command: |
-                      yum install -y tar gzip
-            - run:
-                  name: Install ansible
-                  command: |
-                      apk add --update ansible
-                      ansible --version
-                      pip install awscli
-
-            - run:
-                  name: Install node
-                  command: |
+                      yum install -y tar gzip curl
                       curl -sL https://rpm.nodesource.com/setup_10.x | bash -
                       yum install -y nodejs
 
@@ -350,26 +332,9 @@ jobs:
             # Add ssh keys with fingerprint
             # attach workspace
             - run:
-                  name: Install aws
+                  name: Install dependencies
                   command: |
-                      sudo apt-get update && sudo apt-get install -yy less
-                      curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-                      unzip awscliv2.zip
-                      sudo ./aws/install
-            - run:
-                  name: install tar gzip
-                  command: |
-                      yum install -y tar gzip
-            - run:
-                  name: Install ansible
-                  command: |
-                      apk add --update ansible
-                      ansible --version
-                      pip install awscli
-
-            - run:
-                  name: Install node
-                  command: |
+                      yum install -y tar gzip curl
                       curl -sL https://rpm.nodesource.com/setup_10.x | bash -
                       yum install -y nodejs
             - run:
