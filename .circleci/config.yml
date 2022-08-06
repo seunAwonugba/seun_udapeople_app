@@ -302,16 +302,17 @@ jobs:
                       ["7a:f5:df:92:cd:6b:30:39:88:0f:21:64:1a:40:6e:a5"]
             - attach_workspace:
                   at: ~/
-            - run:
-                  name: Install tar utility
-                  command: |
-                      yum install -y tar gzip
+            # - run:
+            #     name: Install tar utility
+            #     command: |
+            #         yum install -y tar gzip
             - run:
                   name: install dependencies
                   command: |
                       cd frontend
-                      sudo npm install webpack-dev-server -g
-                      sudo npm install
+                      apk add --update py3-pip && pip3 install --upgrade pip && pip3 install awscli
+                  #   sudo npm install webpack-dev-server -g
+                  #   sudo npm install
             # - install_awscli
             # - install_node
             # - install_ansible
