@@ -4,15 +4,35 @@ orbs:
     aws-cli: circleci/aws-cli@2.0.3
 
 commands:
-    install_node_ansible_aws:
+    install_awscli:
+        description: install aws
         steps:
             - run:
-                  name: install_node_ansible_aws
+                  name: install aws
                   command: |
-                      apk add --update ansible curl rsync openssh nodejs npm
-                      ansible --version
-                      pip install awscli
-                      aws --version
+                      curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+                      unzip awscliv2.zip
+                      sudo ./aws/install
+    install_node:
+        description: install node13
+        steps:
+            - run:
+                  name: install node13
+                  command: |
+                      curl -sL https://rpm.nodesource.com/setup_10.x | bash -
+                      yum install -y nodejs
+
+    install_ansible:
+        description: install ansible
+        steps:
+            - run:
+                  name: install ansible
+                  command: |
+                      sudo apt update
+                      sudo apt install software-properties-common -y
+                      sudo add-apt-repository --yes --update ppa:ansible/ansible
+                      sudo apt install ansible -y
+
     destroy-environment:
         description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
         parameters:
@@ -282,12 +302,9 @@ jobs:
                       ["7a:f5:df:92:cd:6b:30:39:88:0f:21:64:1a:40:6e:a5"]
             - attach_workspace:
                   at: ~/
-            - run:
-                  name: Install dependencies
-                  command: |
-                      yum install -y tar gzip curl
-                      curl -sL https://rpm.nodesource.com/setup_10.x | bash -
-                      yum install -y nodejs
+            - install_awscli
+            - install_node
+            - install_ansible
 
             - run:
                   name: Get backend url
@@ -327,24 +344,14 @@ jobs:
                   fingerprints:
                       ["7a:f5:df:92:cd:6b:30:39:88:0f:21:64:1a:40:6e:a5"]
             - attach_workspace:
-                  at: .
+                  at: ~/
             # Checkout code from git
             # Add ssh keys with fingerprint
             # attach workspace
-            - run:
-                  name: Install tar and node
-                  command: |
-                      yum install -y tar gzip curl
-                      curl -sL https://rpm.nodesource.com/setup_10.x | bash -
-                      yum install -y nodejs
-            - run:
-                  name: Install AWS CLI dependencies
-                  working_directory: /tmp
-                  command: |
-                      sudo apt-get update && sudo apt-get install -yy less
-                      curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-                      unzip awscliv2.zip
-                      sudo ./aws/install
+            - install_awscli
+            - install_node
+            - install_ansible
+
             - run:
                   name: Deploy backend
                   command: |
