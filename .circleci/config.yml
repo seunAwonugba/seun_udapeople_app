@@ -2,6 +2,10 @@ version: 2.1
 
 orbs:
     aws-cli: circleci/aws-cli@2.0.3
+executors:
+    node:
+        docker:
+            - image: circleci/node:13.8.0
 
 commands:
     install_awscli:
@@ -292,8 +296,10 @@ jobs:
         # Here's where you will add some code to rollback on failure
 
     deploy-frontend:
-        docker:
-            - image: amazon/aws-cli
+        executor: node
+
+        # docker:
+        #     - image: amazon/aws-cli
         # Docker image here that supports AWS CLI
         steps:
             - checkout
